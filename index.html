@@ -22,5 +22,27 @@
 <section class="panel spots"><div class="section-title">Detecção de presença</div><h2>Escolha uma vaga</h2><div class="spotlist" id="spotlist"></div><div class="sensor-options"><small>Teste o bloqueio por falha</small><button id="faultToggle">Simular falha de sensor</button></div></section>
 <section class="panel events"><div class="section-title">Monitor serial virtual</div><h2>Eventos da simulação</h2><ul id="events"></ul></section></div></div>
 <p class="foot">A cena reproduz a lógica dos sensores e da cancela com carros virtuais. O <a href="https://github.com/jgbarbosa2356/estacionamento-inteligente" target="_blank" rel="noopener">código Arduino e o circuito Wokwi</a> estão no repositório; esta página não se comunica com um Arduino físico.</p></div>
-<script src="./parking3d.js" defer></script>
+<script>
+// Graceful fallback for browsers where hardware WebGL is unavailable.
+// The 2D simulation retains entry, occupancy, exit and fault interactions.
+let webgl = false;
+try {
+  const probe = document.createElement('canvas');
+  const context = probe.getContext('webgl2') || probe.getContext('webgl');
+  webgl = !!context;
+  if (context) context.getExtension('WEBGL_lose_context')?.loseContext();
+} catch (_) { webgl = false; }
+if (webgl) {
+  const script = document.createElement('script');
+  script.src = './parking3d.js';
+  document.body.append(script);
+} else {
+  document.querySelector('.layout').innerHTML = `<section class="panel fallback" style="grid-column:1/-1;padding:18px">
+    <div class="section-title">Modo compatível</div>
+    <h2 style="font-family:'Space Grotesk',sans-serif;margin:7px 0">Simulação interativa disponível</h2>
+    <p style="color:#b5cdd1;margin:0 0 16px">Este navegador está sem WebGL, necessário para renderizar a cena tridimensional. A versão leve abaixo permite testar o mesmo fluxo de entrada, vaga, lotação e saída.</p>
+    <iframe title="Simulação interativa do estacionamento" src="./simulacao_visual.html" style="display:block;width:100%;height:780px;border:1px solid #3b626b;border-radius:12px;background:#071421"></iframe>
+  </section>`;
+}
+</script>
 </body></html>

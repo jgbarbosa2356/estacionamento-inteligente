@@ -2,7 +2,7 @@
 
 Projeto para a atividade **Projeto de um Sistema Embarcado**, Faculdade Nova Roma. Equipe de três integrantes: preencher os nomes antes da entrega. Problema proposto: motoristas perdem tempo procurando vagas e o estacionamento precisa impedir entrada quando está lotado. **Validar o problema escolhido com o professor antes de fechá-lo**, conforme o enunciado.
 
-**[Abrir a simulação 3D](https://jgbarbosa2356.github.io/estacionamento-inteligente/)**. A página é um protótipo virtual que reproduz a lógica de presença por distância, lotação e cancelas. A execução do código do Arduino com sensores e servo é feita separadamente no Wokwi; a página não recebe dados de um circuito físico ou do Wokwi.
+**[Abrir a simulação 3D](https://jgbarbosa2356.github.io/estacionamento-inteligente/)**. A página é um protótipo virtual que reproduz a lógica de presença por distância, lotação e cancelas. A cena 3D usa WebGL; se o navegador não oferecer WebGL, a página mostra automaticamente a versão interativa leve. A execução do código do Arduino com sensores e servo é feita separadamente no Wokwi; a página não recebe dados de um circuito físico ou do Wokwi.
 
 ## Arquivos
 
