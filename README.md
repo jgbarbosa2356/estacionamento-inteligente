@@ -62,6 +62,6 @@ Na versão embarcada do Wokwi, a escolha da vaga é representada fisicamente pel
 
 ## Documentação e entrega
 
-Preencher empresa fictícia, nomes e papéis dos **três integrantes**, problema aprovado pelo professor, link do repositório Git, esquema, arquivos de código e evidências da simulação (capturas ou vídeo). O pacote fornece o protótipo e sua documentação técnica; ainda é preciso criar o repositório da equipe e discutir o problema com o professor.
+Preencher empresa fictícia, nomes e papéis dos **três integrantes**, problema aprovado pelo professor, link do repositório Git, esquema, arquivos de código e evidências da simulação (capturas ou vídeo). O protótipo e a documentação técnica estão neste repositório. Ainda é preciso preencher os dados da equipe, discutir o problema com o professor e acrescentar evidências da simulação.
 
 Referências técnicas: [formato do diagrama](https://docs.wokwi.com/diagram-format), [sensor HC-SR04](https://docs.wokwi.com/parts/wokwi-hc-sr04), [LCD I²C](https://docs.wokwi.com/parts/wokwi-lcd1602), [servo](https://docs.wokwi.com/parts/wokwi-servo).
