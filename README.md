@@ -1,13 +1,28 @@
-# Estacionamento inteligente — simulação virtual
+# Estacionamento inteligente — simulação 3D
 
 Projeto para a atividade **Projeto de um Sistema Embarcado**, Faculdade Nova Roma. Equipe de três integrantes: preencher os nomes antes da entrega. Problema proposto: motoristas perdem tempo procurando vagas e o estacionamento precisa impedir entrada quando está lotado. **Validar o problema escolhido com o professor antes de fechá-lo**, conforme o enunciado.
+
+**[Abrir a simulação 3D](https://jgbarbosa2356.github.io/estacionamento-inteligente/)**. A página é um protótipo virtual que reproduz a lógica de presença por distância, lotação e cancelas. A execução do código do Arduino com sensores e servo é feita separadamente no Wokwi; a página não recebe dados de um circuito físico ou do Wokwi.
 
 ## Arquivos
 
 - `sketch.ino`: código Arduino comentado.
 - `diagram.json`: microcontrolador e ligações para o Wokwi.
 - `libraries.txt`: dependências usadas no Wokwi.
-- `simulacao_visual.html`: demonstração interativa local; abrir com dois cliques no navegador. Nela, o motorista solicita entrada, a cancela abre e ele escolhe uma vaga livre. Quando as quatro vagas estão ocupadas, a entrada é recusada com a mensagem **ESTAC. LOTADO**. A interface ilustra as mesmas regras; o código embarcado executa no Wokwi.
+- `index.html` e `parking3d.js`: página 3D publicada no GitHub Pages. Abra pelo link acima.
+- `parking3d-source.js`: código fonte comentado da simulação 3D; `package.json` permite recompilar o arquivo de distribuição com `npm install` e `npm run build`.
+- `THREE-LICENSE.txt`: licença da biblioteca Three.js incluída no código de distribuição.
+- `simulacao_visual.html`: versão visual 2D anterior, preservada para comparação.
+
+## Demonstrar a versão 3D
+
+1. Clique em **Solicitar entrada**. Um carro se aproxima, a cancela de entrada levanta e as vagas livres são destacadas.
+2. Clique em uma vaga livre na lista ou na cena 3D. O carro trafega pela pista, estaciona e o sensor daquela vaga passa a indicar ocupação. A cancela fecha.
+3. Repita com os quatro carros. Ao tentar entrar com lotação completa, a cancela permanece fechada e aparece **Estacionamento lotado**.
+4. Clique em **Solicitar saída** e escolha um veículo estacionado; ele sai, o sensor detecta a vaga livre e o contador aumenta.
+5. Use **Falhar sensor 2** para demonstrar a regra de segurança: novas entradas são bloqueadas enquanto houver falha, mas veículos ainda podem sair.
+
+Arraste na cena para mudar a câmera, use a roda do mouse para aproximar e clique em **Vista superior** ou **Vista inicial**. Os sensores virtuais são amostrados periodicamente: até 18 cm a vaga é ocupada, a partir de 25 cm é livre; entre esses limites o estado anterior é mantido. O carro só é contado quando chega à vaga, pois a distância é derivada de sua posição na cena.
 
 ## Executar a simulação embarcada
 
@@ -19,13 +34,6 @@ Projeto para a atividade **Projeto de um Sistema Embarcado**, Faculdade Nova Rom
 6. Clique em cada HC-SR04 e altere a distância: **10 cm = ocupada**; **100 cm = livre**. Entre 18 e 25 cm, o sistema preserva o estado anterior para evitar oscilação. Os números de vaga acompanham a posição da esquerda para a direita.
 7. Pressione **ENTRADA** para solicitar abertura. O servo vai a 90° e volta a 0° após 3 s. Pressione **SAÍDA** para abrir independentemente da lotação. Os botões representam pedidos de passagem; para simular o carro estacionando ou saindo, altere também a distância do sensor da vaga.
 8. Coloque os quatro sensores em 10 cm e tente entrar: o LCD informa **ESTAC. LOTADO**, LED vermelho acende e a cancela permanece fechada.
-
-### Demonstrar a versão visual
-
-1. Abra `simulacao_visual.html` no navegador e clique em **Solicitar entrada**.
-2. Com a cancela aberta, clique em uma **vaga livre**; o carro ocupa essa vaga e a cancela fecha.
-3. Repita até ocupar as quatro vagas e tente **Solicitar entrada**: a cancela continua fechada e aparece **ESTAC. LOTADO**.
-4. Clique em **Solicitar saída** e escolha uma **vaga ocupada**. Ela volta a ficar livre.
 
 Na versão embarcada do Wokwi, a escolha da vaga é representada fisicamente pela aproximação do carro ao HC-SR04 correspondente (alterar sua distância para 10 cm após solicitar entrada). O display não oferece um menu de escolha de vaga.
 

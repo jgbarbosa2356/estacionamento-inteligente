@@ -1,0 +1,15 @@
+{
+  "name": "estacionamento-inteligente-3d",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild parking3d-source.js --bundle --minify --format=iife --outfile=parking3d.js"
+  },
+  "dependencies": {
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
+  }
+}
