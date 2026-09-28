@@ -10,7 +10,7 @@ const SLOT_X = [-5.7, -1.9, 1.9, 5.7];
 const SLOT_Z = -4.35;
 const OPEN_CM = 25;
 const OCCUPIED_CM = 18;
-const SENSOR_PERIOD = 220;
+const SENSOR_PERIOD = 350;
 const GATE_WAIT_MS = 24000;
 const $ = (id) => document.getElementById(id);
 const state = {
@@ -25,7 +25,7 @@ scene.background = new THREE.Color(0x101e2a);
 scene.fog = new THREE.Fog(0x101e2a, 26, 55);
 const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.7));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -36,7 +36,7 @@ host.appendChild(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xc5f1ff, 0x1d3339, 2.4));
 const sun = new THREE.DirectionalLight(0xffe5bc, 3.2);
 sun.position.set(-7, 15, 8); sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.mapSize.set(1024, 1024);
 sun.shadow.camera.left = -18; sun.shadow.camera.right = 18;
 sun.shadow.camera.top = 18; sun.shadow.camera.bottom = -18;
 sun.shadow.bias = -0.0003;
@@ -167,6 +167,16 @@ function show(message, type = '') {
   $('status').textContent = message; $('status').className = `status ${type}`;
 }
 function countFree() { return state.sensed.reduce((n, taken, i) => n + (!taken && i !== state.fault ? 1 : 0), 0); }
+// Keep the actual buttons mounted: replacing them on every sensor sample can
+// discard a pointerdown before pointerup and make choosing a bay seem frozen.
+const spotButtons = Array.from({ length: 4 }, (_, i) => {
+  const button = document.createElement('button');
+  button.className = 'spot';
+  button.innerHTML = `<span class="dot"></span><b>VAGA ${String(i + 1).padStart(2, '0')}</b><small></small>`;
+  button.addEventListener('click', () => selectSpot(i));
+  $('spotlist').append(button);
+  return button;
+});
 function sensorReadings() {
   const allCars = state.parked.filter(Boolean);
   if (state.active && !allCars.includes(state.active)) allCars.push(state.active);
@@ -192,13 +202,13 @@ function updatePanel() {
   const hint = state.mode === 'chooseIn' ? 'ESCOLHA UMA VAGA' : state.mode === 'chooseOut' ? 'ESCOLHA O CARRO' : state.mode === 'parking' ? 'ESTACIONANDO' : state.mode === 'leaving' ? 'SAIDA EM CURSO' : state.mode === 'arriving' ? 'CARRO NA ENTRADA' : broken ? 'FALHA NO SENSOR' : free === 0 ? 'ESTAC. LOTADO' : 'AGUARDANDO CARRO';
   $('lcd').textContent = `LIVRES: ${free} / 4\n${hint}`;
   $('enter').disabled = state.mode !== 'idle'; $('exit').disabled = state.mode !== 'idle';
-  $('spotlist').replaceChildren();
   for (let i = 0; i < 4; i++) {
-    const button = document.createElement('button');
+    const button = spotButtons[i];
     const fault = i === state.fault, occupied = state.sensed[i] || !!state.parked[i];
     button.className = 'spot' + (fault ? ' fault' : occupied ? ' occupied' : '') + ((state.mode === 'chooseIn' && !occupied && !fault) || (state.mode === 'chooseOut' && !!state.parked[i]) ? ' selected' : '');
-    button.innerHTML = `<span class="dot"></span><b>VAGA ${String(i + 1).padStart(2, '0')}</b><small>${fault ? 'Falha de leitura' : occupied ? 'Ocupada' : 'Livre'} · ${fault ? '—' : state.distance[i]} cm</small>`;
-    button.onclick = () => selectSpot(i); $('spotlist').append(button);
+    const label = `${fault ? 'Falha de leitura' : occupied ? 'Ocupada' : 'Livre'} · ${fault ? '—' : state.distance[i]} cm`;
+    const small = button.querySelector('small');
+    if (small.textContent !== label) small.textContent = label;
     const color = fault ? 0xffc96b : occupied ? 0xff7d70 : 0x5df0b9;
     sensorLights[i].material.color.setHex(color); sensorLights[i].material.emissive.setHex(color);
     bayBorders[i].material.opacity = button.classList.contains('selected') ? .16 : .027;
