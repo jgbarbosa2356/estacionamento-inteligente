@@ -2,7 +2,7 @@
 
 Projeto para a atividade **Projeto de um Sistema Embarcado**, Faculdade Nova Roma. Equipe de três integrantes: preencher os nomes antes da entrega. Problema proposto: motoristas perdem tempo procurando vagas e o estacionamento precisa impedir entrada quando está lotado. **Validar o problema escolhido com o professor antes de fechá-lo**, conforme o enunciado.
 
-**[Abrir a simulação 3D](https://jgbarbosa2356.github.io/estacionamento-inteligente/)**. A página é um protótipo virtual que reproduz a lógica de presença por distância, lotação e cancelas. A cena 3D usa WebGL; se o navegador não oferecer WebGL, a página mostra automaticamente a versão interativa leve. A execução do código do Arduino com sensores e servo é feita separadamente no Wokwi; a página não recebe dados de um circuito físico ou do Wokwi.
+**[Abrir a simulação 3D](https://jgbarbosa2356.github.io/estacionamento-inteligente/)**. A página é um protótipo virtual que reproduz a lógica de presença por distância, lotação e cancelas. A cena 3D usa WebGL; se o navegador não oferecer WebGL, a página mostra automaticamente a versão interativa leve. No celular, os controles aparecem antes da cena, há botões de zoom e a opção **Modo leve** para aparelhos com desempenho limitado. A execução do código do Arduino com sensores e servo é feita separadamente no Wokwi; a página não recebe dados de um circuito físico ou do Wokwi.
 
 ## Arquivos
 
@@ -21,6 +21,8 @@ Projeto para a atividade **Projeto de um Sistema Embarcado**, Faculdade Nova Rom
 3. Repita com os quatro carros. Ao tentar entrar com lotação completa, a cancela permanece fechada e aparece **Estacionamento lotado**.
 4. Clique em **Solicitar saída** e escolha um veículo estacionado; ele sai, o sensor detecta a vaga livre e o contador aumenta.
 5. Use **Falhar sensor 2** para demonstrar a regra de segurança: novas entradas são bloqueadas enquanto houver falha, mas veículos ainda podem sair.
+
+Para uma apresentação guiada, clique em **Iniciar demonstração completa**. A página reinicia com quatro vagas livres e mostra dez etapas: início, quatro entradas, tentativa recusada por lotação e quatro saídas, até o estacionamento voltar a ficar vazio. Use **Pausar/Continuar** quando quiser explicar uma etapa. **Reiniciar** volta ao estado inicial. Esses controles também existem na versão leve, que pode ser usada no celular.
 
 Arraste na cena para mudar a câmera, use a roda do mouse para aproximar e clique em **Vista superior** ou **Vista inicial**. Os sensores virtuais são amostrados periodicamente: até 18 cm a vaga é ocupada, a partir de 25 cm é livre; entre esses limites o estado anterior é mantido. O carro só é contado quando chega à vaga, pois a distância é derivada de sua posição na cena.
 

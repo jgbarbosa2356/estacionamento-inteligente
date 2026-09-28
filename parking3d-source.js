@@ -17,6 +17,7 @@ const state = {
   mode: 'idle', parked: [null, null, null, null], sensed: [false, false, false, false],
   distance: [150, 150, 150, 150], fault: -1, active: null, gateInTarget: 0,
   gateOutTarget: 0, choiceTimer: null, pendingSpot: null, notice: '', noticeType: '',
+  demo: false, demoPaused: false,
 };
 
 const host = $('viewport');
@@ -201,9 +202,11 @@ function updatePanel() {
   $('green').classList.toggle('on', !broken && free > 0); $('red').classList.toggle('on', broken || free === 0);
   const hint = state.mode === 'chooseIn' ? 'ESCOLHA UMA VAGA' : state.mode === 'chooseOut' ? 'ESCOLHA O CARRO' : state.mode === 'parking' ? 'ESTACIONANDO' : state.mode === 'leaving' ? 'SAIDA EM CURSO' : state.mode === 'arriving' ? 'CARRO NA ENTRADA' : broken ? 'FALHA NO SENSOR' : free === 0 ? 'ESTAC. LOTADO' : 'AGUARDANDO CARRO';
   $('lcd').textContent = `LIVRES: ${free} / 4\n${hint}`;
-  $('enter').disabled = state.mode !== 'idle'; $('exit').disabled = state.mode !== 'idle';
+  $('enter').disabled = state.mode !== 'idle' || state.demo; $('exit').disabled = state.mode !== 'idle' || state.demo;
+  $('faultToggle').disabled = state.demo;
   for (let i = 0; i < 4; i++) {
     const button = spotButtons[i];
+    button.disabled = state.demo;
     const fault = i === state.fault, occupied = state.sensed[i] || !!state.parked[i];
     button.className = 'spot' + (fault ? ' fault' : occupied ? ' occupied' : '') + (((state.mode === 'chooseIn' || state.mode === 'arriving') && !occupied && !fault) || (state.mode === 'chooseOut' && !!state.parked[i]) ? ' selected' : '');
     const label = `${fault ? 'Falha de leitura' : occupied ? 'Ocupada' : 'Livre'} · ${fault ? '—' : state.distance[i]} cm`;
@@ -218,10 +221,11 @@ function updatePanel() {
 }
 function animatePath(obj, points, ms) {
   return new Promise(resolve => {
-    let segment = 0, started = performance.now();
+    let segment = 0, elapsed = 0, previous = null;
     const per = ms / (points.length - 1);
     function frame(now) {
-      const elapsed = Math.min(now - started, ms);
+      if (previous !== null && !state.demoPaused) elapsed = Math.min(elapsed + now - previous, ms);
+      previous = now;
       segment = Math.min(Math.floor(elapsed / per), points.length - 2);
       const u = Math.min((elapsed - segment * per) / per, 1);
       const smooth = u * u * (3 - 2 * u);
@@ -252,6 +256,7 @@ async function requestEntry() {
     await selectSpot(chosen);
     return;
   }
+  if (state.demo) return;
   state.choiceTimer = setTimeout(async () => {
     if (state.mode !== 'chooseIn') return;
     state.mode = 'cancelling'; show('Tempo de escolha esgotado. Entrada cancelada.', 'warning');
@@ -296,12 +301,64 @@ function requestExit() {
   state.mode = 'chooseOut'; show('Escolha a vaga ocupada do veículo que vai sair.'); updatePanel();
 }
 $('enter').onclick = requestEntry; $('exit').onclick = requestExit;
+$('restart').onclick = () => { window.location.href = window.location.pathname; };
+$('lightMode').onclick = () => { window.location.search = '?modo=leve'; };
+$('demo').onclick = () => { window.location.search = '?demo=1'; };
+$('pauseDemo').onclick = () => {
+  if (!state.demo) return;
+  state.demoPaused = !state.demoPaused;
+  $('pauseDemo').textContent = state.demoPaused ? '▶ Continuar' : '⏸ Pausar';
+  if (state.demoPaused) show('Demonstração pausada. Toque em Continuar para prosseguir.');
+};
 $('faultToggle').onclick = () => {
   state.fault = state.fault === -1 ? 1 : -1;
   addEvent(state.fault === -1 ? 'SENSOR 2 · comunicação restaurada' : 'SENSOR 2 · falha de leitura');
   show(state.fault === -1 ? 'Sensor restaurado. Novas entradas liberadas se houver vaga.' : 'Falha no sensor 2: novas entradas bloqueadas.', state.fault === -1 ? 'success' : 'warning');
   sensorReadings();
 };
+
+function demoStep(number, label) {
+  $('demoProgress').textContent = `Etapa ${number} de 10 · ${label}`;
+  addEvent(`DEMONSTRAÇÃO ${number}/10 · ${label}`);
+}
+async function demoWait(ms) {
+  while (ms > 0) {
+    await wait(100);
+    if (!state.demoPaused) ms -= 100;
+  }
+}
+async function runDemo() {
+  state.demo = true;
+  $('demo').disabled = true;
+  $('pauseDemo').hidden = false;
+  updatePanel();
+  demoStep(1, 'Início: quatro vagas livres e cancela fechada.');
+  await demoWait(1700);
+  for (let i = 0; i < 4; i++) {
+    demoStep(i + 2, `Carro ${i + 1} solicita entrada e escolhe a vaga ${i + 1}.`);
+    await requestEntry();
+    await demoWait(400);
+    await selectSpot(i);
+    await demoWait(900);
+  }
+  demoStep(6, 'Estacionamento lotado: quinta entrada negada, cancela fechada.');
+  await requestEntry();
+  await demoWait(2700);
+  for (let i = 0; i < 4; i++) {
+    demoStep(i + 7, `Saída do carro da vaga ${i + 1}; sensor libera a vaga.`);
+    requestExit();
+    await demoWait(450);
+    await selectSpot(i);
+    await demoWait(850);
+  }
+  state.demo = false; state.demoPaused = false;
+  $('pauseDemo').hidden = true;
+  $('demo').disabled = false;
+  $('demo').textContent = '▶ Repetir demonstração completa';
+  $('demoProgress').textContent = 'Concluído · quatro vagas livres. Você pode testar manualmente ou repetir.';
+  show('Demonstração concluída: estacionamento vazio e cancela fechada.', 'success');
+  updatePanel();
+}
 
 // Camera orbit is intentionally implemented here to keep the static page self-contained.
 let azimuth = .52, polar = .98, radius = 25, dragging = false, downX = 0, downY = 0, lastX = 0, lastY = 0;
@@ -312,6 +369,8 @@ function updateCamera() {
 }
 $('resetCam').onclick = () => { azimuth = .52; polar = .98; radius = 25; updateCamera(); };
 $('topCam').onclick = () => { azimuth = .01; polar = .18; radius = 27; updateCamera(); };
+$('zoomIn').onclick = () => { radius = THREE.MathUtils.clamp(radius - 2.5, 16, 38); updateCamera(); };
+$('zoomOut').onclick = () => { radius = THREE.MathUtils.clamp(radius + 2.5, 16, 38); updateCamera(); };
 host.addEventListener('pointerdown', e => { dragging = true; downX = lastX = e.clientX; downY = lastY = e.clientY; host.setPointerCapture(e.pointerId); });
 host.addEventListener('pointermove', e => {
   if (!dragging) return;
@@ -327,17 +386,20 @@ host.addEventListener('pointerup', e => {
   const mouse = new THREE.Vector2((e.clientX - rect.left) / rect.width * 2 - 1, -((e.clientY - rect.top) / rect.height * 2 - 1));
   raycaster.setFromCamera(mouse, camera);
   const matches = raycaster.intersectObjects(hitZones);
-  if (matches.length) selectSpot(matches[0].object.userData.index);
+  if (matches.length && !state.demo) selectSpot(matches[0].object.userData.index);
 });
 host.addEventListener('wheel', e => { e.preventDefault(); radius = THREE.MathUtils.clamp(radius + Math.sign(e.deltaY) * 1.35, 16, 38); updateCamera(); }, {passive:false});
 function resize() { const {width, height} = host.getBoundingClientRect(); if (!width || !height) return; camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height, false); }
 new ResizeObserver(resize).observe(host); resize(); updateCamera();
 let lastSample = 0;
 renderer.setAnimationLoop(now => {
-  gateIn.rotation.x = THREE.MathUtils.damp(gateIn.rotation.x, state.gateInTarget, 6.5, 1/60);
-  gateOut.rotation.x = THREE.MathUtils.damp(gateOut.rotation.x, state.gateOutTarget, 6.5, 1/60);
+  if (!state.demoPaused) {
+    gateIn.rotation.x = THREE.MathUtils.damp(gateIn.rotation.x, state.gateInTarget, 6.5, 1/60);
+    gateOut.rotation.x = THREE.MathUtils.damp(gateOut.rotation.x, state.gateOutTarget, 6.5, 1/60);
+  }
   if (now - lastSample > SENSOR_PERIOD) { lastSample = now; sensorReadings(); }
   renderer.render(scene, camera);
 });
 addEvent('SISTEMA INICIADO · quatro sensores operacionais');
 sensorReadings();
+if (new URLSearchParams(window.location.search).has('demo')) runDemo();
