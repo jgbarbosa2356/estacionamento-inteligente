@@ -16,7 +16,7 @@ const $ = (id) => document.getElementById(id);
 const state = {
   mode: 'idle', parked: [null, null, null, null], sensed: [false, false, false, false],
   distance: [150, 150, 150, 150], fault: -1, active: null, gateInTarget: 0,
-  gateOutTarget: 0, choiceTimer: null, notice: '', noticeType: '',
+  gateOutTarget: 0, choiceTimer: null, pendingSpot: null, notice: '', noticeType: '',
 };
 
 const host = $('viewport');
@@ -205,7 +205,7 @@ function updatePanel() {
   for (let i = 0; i < 4; i++) {
     const button = spotButtons[i];
     const fault = i === state.fault, occupied = state.sensed[i] || !!state.parked[i];
-    button.className = 'spot' + (fault ? ' fault' : occupied ? ' occupied' : '') + ((state.mode === 'chooseIn' && !occupied && !fault) || (state.mode === 'chooseOut' && !!state.parked[i]) ? ' selected' : '');
+    button.className = 'spot' + (fault ? ' fault' : occupied ? ' occupied' : '') + (((state.mode === 'chooseIn' || state.mode === 'arriving') && !occupied && !fault) || (state.mode === 'chooseOut' && !!state.parked[i]) ? ' selected' : '');
     const label = `${fault ? 'Falha de leitura' : occupied ? 'Ocupada' : 'Livre'} · ${fault ? '—' : state.distance[i]} cm`;
     const small = button.querySelector('small');
     if (small.textContent !== label) small.textContent = label;
@@ -240,12 +240,18 @@ async function requestEntry() {
   sensorReadings();
   if (state.fault !== -1) { show('Sensor com falha: entrada bloqueada. Restaure o sensor para continuar.', 'warning'); addEvent('ENTRADA NEGADA · falha no sensor'); return; }
   if (countFree() === 0) { show('Estacionamento lotado: a cancela permanece fechada.', 'warning'); addEvent('ENTRADA NEGADA · estacionamento lotado'); return; }
-  state.mode = 'arriving'; state.active = makeCar([0x59d7cf, 0xf6b069, 0x7da8f0, 0xdb9ae1][state.parked.filter(Boolean).length % 4]);
+  state.mode = 'arriving'; state.pendingSpot = null; state.active = makeCar([0x59d7cf, 0xf6b069, 0x7da8f0, 0xdb9ae1][state.parked.filter(Boolean).length % 4]);
   state.active.position.set(-13.8, 0, .5); state.gateInTarget = 1.43;
   show('Entrada autorizada: carro chegando à cancela.', 'success'); addEvent('ENTRADA AUTORIZADA · cancela levantada'); updatePanel();
   await wait(400);
   await animatePath(state.active, [{x:-13.8,z:.5},{x:-10.25,z:.5}], 1200);
   state.mode = 'chooseIn'; show('Cancela aberta. Clique em uma das vagas livres para estacionar.', 'success'); updatePanel();
+  if (state.pendingSpot !== null) {
+    const chosen = state.pendingSpot;
+    state.pendingSpot = null;
+    await selectSpot(chosen);
+    return;
+  }
   state.choiceTimer = setTimeout(async () => {
     if (state.mode !== 'chooseIn') return;
     state.mode = 'cancelling'; show('Tempo de escolha esgotado. Entrada cancelada.', 'warning');
@@ -254,6 +260,12 @@ async function requestEntry() {
   }, GATE_WAIT_MS);
 }
 async function selectSpot(i) {
+  if (state.mode === 'arriving') {
+    if (i === state.fault || state.sensed[i] || state.parked[i]) { show('Esta vaga está indisponível. Escolha uma vaga livre.', 'warning'); return; }
+    state.pendingSpot = i;
+    show(`Vaga ${i + 1} selecionada. O carro vai estacionar ao chegar à cancela.`, 'success');
+    return;
+  }
   if (state.mode === 'chooseIn') {
     if (i === state.fault || state.sensed[i] || state.parked[i]) { show('Esta vaga está indisponível. Escolha uma vaga livre.', 'warning'); return; }
     clearTimeout(state.choiceTimer); state.mode = 'parking'; show(`Carro a caminho da vaga ${i + 1}. Sensor aguardando presença.`, 'success'); updatePanel();
