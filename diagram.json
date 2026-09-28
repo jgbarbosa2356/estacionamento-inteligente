@@ -1,0 +1,328 @@
+{
+  "version": 1,
+  "author": "Equipe Estacionamento Inteligente",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "id": "uno",
+      "type": "wokwi-arduino-uno",
+      "left": 250,
+      "top": 230,
+      "attrs": {}
+    },
+    {
+      "id": "lcd",
+      "type": "wokwi-lcd1602",
+      "left": 155,
+      "top": -115,
+      "attrs": {
+        "pins": "i2c"
+      }
+    },
+    {
+      "id": "servo",
+      "type": "wokwi-servo",
+      "left": 630,
+      "top": 255,
+      "attrs": {}
+    },
+    {
+      "id": "entrada",
+      "type": "wokwi-pushbutton",
+      "left": 625,
+      "top": 360,
+      "attrs": {
+        "color": "green",
+        "label": "ENTRADA"
+      }
+    },
+    {
+      "id": "saida",
+      "type": "wokwi-pushbutton",
+      "left": 625,
+      "top": 445,
+      "attrs": {
+        "color": "blue",
+        "label": "SAIDA"
+      }
+    },
+    {
+      "id": "verde",
+      "type": "wokwi-led",
+      "left": 625,
+      "top": -80,
+      "attrs": {
+        "color": "green",
+        "label": "VAGAS"
+      }
+    },
+    {
+      "id": "vermelho",
+      "type": "wokwi-led",
+      "left": 705,
+      "top": -80,
+      "attrs": {
+        "color": "red",
+        "label": "LOTADO/FALHA"
+      }
+    },
+    {
+      "id": "rverde",
+      "type": "wokwi-resistor",
+      "left": 625,
+      "top": -20,
+      "attrs": {
+        "value": "220"
+      }
+    },
+    {
+      "id": "rvermelho",
+      "type": "wokwi-resistor",
+      "left": 705,
+      "top": -20,
+      "attrs": {
+        "value": "220"
+      }
+    },
+    {
+      "id": "vaga1",
+      "type": "wokwi-hc-sr04",
+      "left": -140,
+      "top": 80,
+      "attrs": {
+        "distance": "100",
+        "label": "VAGA 1"
+      }
+    },
+    {
+      "id": "vaga2",
+      "type": "wokwi-hc-sr04",
+      "left": 65,
+      "top": 80,
+      "attrs": {
+        "distance": "100",
+        "label": "VAGA 2"
+      }
+    },
+    {
+      "id": "vaga3",
+      "type": "wokwi-hc-sr04",
+      "left": 270,
+      "top": 80,
+      "attrs": {
+        "distance": "100",
+        "label": "VAGA 3"
+      }
+    },
+    {
+      "id": "vaga4",
+      "type": "wokwi-hc-sr04",
+      "left": 475,
+      "top": 80,
+      "attrs": {
+        "distance": "100",
+        "label": "VAGA 4"
+      }
+    }
+  ],
+  "connections": [
+    [
+      "vaga1:VCC",
+      "uno:5V",
+      "red",
+      []
+    ],
+    [
+      "vaga1:GND",
+      "uno:GND.1",
+      "black",
+      []
+    ],
+    [
+      "vaga1:TRIG",
+      "uno:2",
+      "blue",
+      []
+    ],
+    [
+      "vaga1:ECHO",
+      "uno:3",
+      "green",
+      []
+    ],
+    [
+      "vaga2:VCC",
+      "uno:5V",
+      "red",
+      []
+    ],
+    [
+      "vaga2:GND",
+      "uno:GND.1",
+      "black",
+      []
+    ],
+    [
+      "vaga2:TRIG",
+      "uno:4",
+      "blue",
+      []
+    ],
+    [
+      "vaga2:ECHO",
+      "uno:5",
+      "green",
+      []
+    ],
+    [
+      "vaga3:VCC",
+      "uno:5V",
+      "red",
+      []
+    ],
+    [
+      "vaga3:GND",
+      "uno:GND.1",
+      "black",
+      []
+    ],
+    [
+      "vaga3:TRIG",
+      "uno:6",
+      "blue",
+      []
+    ],
+    [
+      "vaga3:ECHO",
+      "uno:7",
+      "green",
+      []
+    ],
+    [
+      "vaga4:VCC",
+      "uno:5V",
+      "red",
+      []
+    ],
+    [
+      "vaga4:GND",
+      "uno:GND.1",
+      "black",
+      []
+    ],
+    [
+      "vaga4:TRIG",
+      "uno:8",
+      "blue",
+      []
+    ],
+    [
+      "vaga4:ECHO",
+      "uno:9",
+      "green",
+      []
+    ],
+    [
+      "lcd:VCC",
+      "uno:5V",
+      "red",
+      []
+    ],
+    [
+      "lcd:GND",
+      "uno:GND.1",
+      "black",
+      []
+    ],
+    [
+      "lcd:SDA",
+      "uno:A4",
+      "green",
+      []
+    ],
+    [
+      "lcd:SCL",
+      "uno:A5",
+      "blue",
+      []
+    ],
+    [
+      "servo:V+",
+      "uno:5V",
+      "red",
+      []
+    ],
+    [
+      "servo:GND",
+      "uno:GND.1",
+      "black",
+      []
+    ],
+    [
+      "servo:PWM",
+      "uno:10",
+      "orange",
+      []
+    ],
+    [
+      "entrada:1.l",
+      "uno:11",
+      "green",
+      []
+    ],
+    [
+      "entrada:2.l",
+      "uno:GND.1",
+      "black",
+      []
+    ],
+    [
+      "saida:1.l",
+      "uno:12",
+      "blue",
+      []
+    ],
+    [
+      "saida:2.l",
+      "uno:GND.1",
+      "black",
+      []
+    ],
+    [
+      "uno:A0",
+      "rverde:1",
+      "green",
+      []
+    ],
+    [
+      "rverde:2",
+      "verde:A",
+      "green",
+      []
+    ],
+    [
+      "verde:C",
+      "uno:GND.1",
+      "black",
+      []
+    ],
+    [
+      "uno:A1",
+      "rvermelho:1",
+      "red",
+      []
+    ],
+    [
+      "rvermelho:2",
+      "vermelho:A",
+      "red",
+      []
+    ],
+    [
+      "vermelho:C",
+      "uno:GND.1",
+      "black",
+      []
+    ]
+  ]
+}
