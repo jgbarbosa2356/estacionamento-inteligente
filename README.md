@@ -1,18 +1,62 @@
 # Estacionamento inteligente — simulação 3D
 
-Projeto para a atividade **Projeto de um Sistema Embarcado**, Faculdade Nova Roma. Equipe de três integrantes: preencher os nomes antes da entrega. Problema proposto: motoristas perdem tempo procurando vagas e o estacionamento precisa impedir entrada quando está lotado. **Validar o problema escolhido com o professor antes de fechá-lo**, conforme o enunciado.
+Projeto acadêmico para a atividade **Projeto de um Sistema Embarcado**, Faculdade Nova Roma. A empresa fictícia **SmartPark Soluções Inteligentes** apresenta o produto **SmartPark — Estacionamento Inteligente**, desenvolvido por João Gabriel Barbosa Costa, Gabriel Sales e Antônio Carlos.
+
+## Empresa
+
+**Nome:** SmartPark Soluções Inteligentes.  
+**Natureza:** empresa fictícia criada para este trabalho acadêmico.  
+**Área de atuação:** automação de estacionamentos e desenvolvimento de soluções com sensores, microcontroladores e interfaces web.  
+**Produto do projeto:** SmartPark — Estacionamento Inteligente.
+
+A empresa propõe soluções para facilitar a consulta de vagas e o controle de acesso em estacionamentos de pequeno porte. Seu público-alvo são administradores de estacionamentos, estabelecimentos comerciais e instituições que precisam organizar a entrada e a saída de veículos. Os motoristas são os usuários da interface de disponibilidade.
+
+**Missão:** tornar o acesso ao estacionamento mais claro, reduzindo a procura por vagas e demonstrando um controle de entrada condicionado à disponibilidade.  
+**Visão:** desenvolver protótipos que possam evoluir para instalações físicas após validação técnica.  
+**Valores:** clareza para o usuário, responsabilidade no tratamento de falhas, acessibilidade da interface e documentação reproduzível.
+
+A entrega atual é um protótipo acadêmico de quatro vagas. Ela inclui um circuito virtual com Arduino Uno no Wokwi e uma simulação web independente, com modo 3D e modo leve. A empresa não possui operação comercial ou clientes reais documentados neste projeto.
+
+## Equipe e funções
+
+A divisão de responsabilidades definida para o trabalho é:
+
+| Integrante | Função | Responsabilidades |
+|---|---|---|
+| João Gabriel Barbosa Costa | Desenvolvimento e integração | Organizar o repositório, trabalhar na lógica de entrada e saída e integrar os elementos do protótipo. |
+| Gabriel Sales | Circuito e sensores | Organizar o circuito Wokwi, conferir sensores, LCD, LEDs, servo e pinagem, e preparar os cenários de ocupação das vagas. |
+| Antônio Carlos | Interface, testes e documentação | Organizar os controles da simulação web, os roteiros de testes, a documentação e a demonstração do produto. |
+
+Os integrantes podem colaborar em todas as etapas. Essa distribuição define a organização da equipe, sem afirmar que cada atividade já foi executada individualmente.
+
+## Dor do cliente e solução proposta
+
+**Dor:** o motorista chega sem saber se há vagas e pode circular desnecessariamente; o administrador precisa impedir novas entradas quando o estacionamento está lotado.
+
+**Solução:** informar o total de vagas livres, receber uma solicitação de entrada e liberar a cancela apenas quando houver disponibilidade. Na página web, após a abertura o motorista escolhe uma vaga livre. Com lotação, a entrada é recusada e uma mensagem explica o motivo. A saída libera a vaga e atualiza a disponibilidade.
+
+**Objetivo do produto:** demonstrar um fluxo completo de acesso, escolha de vaga, ocupação, lotação e saída. A demonstração automática preenche as quatro vagas, recusa uma quinta entrada e depois esvazia o estacionamento.
+
+**Validação acadêmica do problema:** a discussão e aprovação com o professor ainda devem ser confirmadas pela equipe. Não há registro de aprovação no repositório.
+
+## Documentação do produto
+
+- **[Documentação técnica e acadêmica em PDF](docs/Documentacao_SmartPark_Nova_Roma.pdf)** — documento fornecido pela equipe.
+- As seções abaixo descrevem tecnologias, componentes, funcionamento, execução e demonstração.
+
 
 **[Abrir a simulação 3D](https://jgbarbosa2356.github.io/estacionamento-inteligente/)**. A página é um protótipo virtual que reproduz a lógica de presença por distância, lotação e cancelas. A cena 3D usa WebGL; se o navegador não oferecer WebGL, a página mostra automaticamente a versão interativa leve. No celular, os controles aparecem antes da cena, há botões de zoom e a opção **Modo leve** para aparelhos com desempenho limitado. A execução do código do Arduino com sensores e servo é feita separadamente no Wokwi; a página não recebe dados de um circuito físico ou do Wokwi.
 
 ## Arquivos
 
+- `docs/Documentacao_SmartPark_Nova_Roma.pdf`: documentação técnica e acadêmica fornecida pela equipe.
 - `sketch.ino`: código Arduino comentado.
 - `diagram.json`: microcontrolador e ligações para o Wokwi.
 - `libraries.txt`: dependências usadas no Wokwi.
 - `index.html` e `parking3d.js`: página 3D publicada no GitHub Pages. Abra pelo link acima.
 - `parking3d-source.js`: código fonte comentado da simulação 3D; `package.json` permite recompilar o arquivo de distribuição com `npm install` e `npm run build`.
 - `THREE-LICENSE.txt`: licença da biblioteca Three.js incluída no código de distribuição.
-- `simulacao_visual.html`: versão visual 2D anterior, preservada para comparação.
+- `simulacao_visual.html`: modo leve 2D, usado como alternativa à cena 3D.
 
 ## Demonstrar a versão 3D
 
@@ -72,6 +116,9 @@ Na versão embarcada do Wokwi, a escolha da vaga é representada fisicamente pel
 
 ## Documentação e entrega
 
-Preencher empresa fictícia, nomes e papéis dos **três integrantes**, problema aprovado pelo professor, link do repositório Git, esquema, arquivos de código e evidências da simulação (capturas ou vídeo). O protótipo e a documentação técnica estão neste repositório. Ainda é preciso preencher os dados da equipe, discutir o problema com o professor e acrescentar evidências da simulação.
+A empresa fictícia, os integrantes, suas funções e o produto estão documentados neste README. O repositório contém o código-fonte, o esquema Wokwi, a simulação web e a [documentação em PDF](docs/Documentacao_SmartPark_Nova_Roma.pdf).
+
+Para concluir a validação acadêmica, a equipe deve confirmar a discussão do problema com o professor e registrar as evidências dos testes. Capturas ou vídeos podem ser adicionados à pasta `docs/`. A página web representa um ambiente virtual independente; ela não recebe dados do Wokwi ou de sensores físicos.
 
 Referências técnicas: [formato do diagrama](https://docs.wokwi.com/diagram-format), [sensor HC-SR04](https://docs.wokwi.com/parts/wokwi-hc-sr04), [LCD I²C](https://docs.wokwi.com/parts/wokwi-lcd1602), [servo](https://docs.wokwi.com/parts/wokwi-servo).
+
