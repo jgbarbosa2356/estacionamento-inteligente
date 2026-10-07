@@ -46,7 +46,7 @@ Os integrantes podem colaborar em todas as etapas. Essa distribuição define a 
 - **Atualização do circuito em 07/10/2026:** o README e os arquivos Wokwi descrevem as regras atuais. O PDF é uma versão anterior e pode apresentar diferenças nas regras da cancela e nos LEDs por vaga.
 
 
-**[Abrir a simulação 3D](https://jgbarbosa2356.github.io/estacionamento-inteligente/)**. A página é um protótipo virtual que reproduz a lógica de presença por distância, lotação e cancelas. A cena 3D usa WebGL; se o navegador não oferecer WebGL, a página mostra automaticamente a versão interativa leve. No celular, os controles aparecem antes da cena, há botões de zoom e a opção **Modo leve** para aparelhos com desempenho limitado. A execução do código do Arduino com sensores e servo é feita separadamente no Wokwi; a página não recebe dados de um circuito físico ou do Wokwi.
+**[Abrir a simulação 3D](jgbarbosa2356.github.io/estacionamento-inteligente)**. A página é um protótipo virtual que reproduz a lógica de presença por distância, lotação e cancelas. A cena 3D usa WebGL; se o navegador não oferecer WebGL, a página mostra automaticamente a versão interativa leve. No celular, os controles aparecem antes da cena, há botões de zoom e a opção **Modo leve** para aparelhos com desempenho limitado. A execução do código do Arduino com sensores e servo é feita separadamente no Wokwi; a página não recebe dados de um circuito físico ou do Wokwi.
 
 ## Arquivos
 
