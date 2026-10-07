@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "author": "Equipe Estacionamento Inteligente",
+  "author": "João Gabriel Barbosa Costa, Gabriel Sales e Antônio Carlos",
   "editor": "wokwi",
   "parts": [
     {
@@ -24,7 +24,11 @@
       "type": "wokwi-servo",
       "left": 630,
       "top": 255,
-      "attrs": {}
+      "attrs": {
+        "horn": "single",
+        "hornColor": "#e53935"
+      },
+      "rotate": 270
     },
     {
       "id": "entrada",
@@ -122,6 +126,59 @@
       "attrs": {
         "distance": "100",
         "label": "VAGA 4"
+      }
+    },
+    {
+      "id": "status0",
+      "type": "wokwi-led-strip",
+      "left": -80,
+      "top": 20,
+      "attrs": {
+        "pixels": "1",
+        "pixelShape": "circle",
+        "pixelSize": "5050"
+      }
+    },
+    {
+      "id": "status1",
+      "type": "wokwi-led-strip",
+      "left": 125,
+      "top": 20,
+      "attrs": {
+        "pixels": "1",
+        "pixelShape": "circle",
+        "pixelSize": "5050"
+      }
+    },
+    {
+      "id": "status2",
+      "type": "wokwi-led-strip",
+      "left": 330,
+      "top": 20,
+      "attrs": {
+        "pixels": "1",
+        "pixelShape": "circle",
+        "pixelSize": "5050"
+      }
+    },
+    {
+      "id": "status3",
+      "type": "wokwi-led-strip",
+      "left": 535,
+      "top": 20,
+      "attrs": {
+        "pixels": "1",
+        "pixelShape": "circle",
+        "pixelSize": "5050"
+      }
+    },
+    {
+      "id": "rotuloCancela",
+      "type": "wokwi-text",
+      "left": 620,
+      "top": 205,
+      "attrs": {
+        "text": "CANCELA (SERVO)"
       }
     }
   ],
@@ -322,6 +379,78 @@
       "vermelho:C",
       "uno:GND.1",
       "black",
+      []
+    ],
+    [
+      "status0:VDD",
+      "uno:5V",
+      "red",
+      []
+    ],
+    [
+      "status0:VSS",
+      "uno:GND.1",
+      "black",
+      []
+    ],
+    [
+      "uno:13",
+      "status0:DIN",
+      "purple",
+      []
+    ],
+    [
+      "status1:VDD",
+      "uno:5V",
+      "red",
+      []
+    ],
+    [
+      "status1:VSS",
+      "uno:GND.1",
+      "black",
+      []
+    ],
+    [
+      "status0:DOUT",
+      "status1:DIN",
+      "purple",
+      []
+    ],
+    [
+      "status2:VDD",
+      "uno:5V",
+      "red",
+      []
+    ],
+    [
+      "status2:VSS",
+      "uno:GND.1",
+      "black",
+      []
+    ],
+    [
+      "status1:DOUT",
+      "status2:DIN",
+      "purple",
+      []
+    ],
+    [
+      "status3:VDD",
+      "uno:5V",
+      "red",
+      []
+    ],
+    [
+      "status3:VSS",
+      "uno:GND.1",
+      "black",
+      []
+    ],
+    [
+      "status2:DOUT",
+      "status3:DIN",
+      "purple",
       []
     ]
   ]

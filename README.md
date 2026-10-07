@@ -43,6 +43,7 @@ Os integrantes podem colaborar em todas as etapas. Essa distribuição define a 
 
 - **[Documentação técnica e acadêmica em PDF](docs/Documentacao_SmartPark_Nova_Roma.pdf)** — documento fornecido pela equipe.
 - As seções abaixo descrevem tecnologias, componentes, funcionamento, execução e demonstração.
+- **Atualização do circuito em 07/10/2026:** o README e os arquivos Wokwi descrevem as regras atuais. O PDF é uma versão anterior e pode apresentar diferenças nas regras da cancela e nos LEDs por vaga.
 
 
 **[Abrir a simulação 3D](https://jgbarbosa2356.github.io/estacionamento-inteligente/)**. A página é um protótipo virtual que reproduz a lógica de presença por distância, lotação e cancelas. A cena 3D usa WebGL; se o navegador não oferecer WebGL, a página mostra automaticamente a versão interativa leve. No celular, os controles aparecem antes da cena, há botões de zoom e a opção **Modo leve** para aparelhos com desempenho limitado. A execução do código do Arduino com sensores e servo é feita separadamente no Wokwi; a página não recebe dados de um circuito físico ou do Wokwi.
@@ -72,16 +73,26 @@ Arraste na cena para mudar a câmera, use a roda do mouse para aproximar e cliqu
 
 ## Executar a simulação embarcada
 
-1. Acesse [Wokwi Arduino Uno](https://wokwi.com/projects/new/arduino-uno) e crie um projeto.
-2. Substitua todo o conteúdo de `sketch.ino` pelo arquivo deste pacote.
-3. Abra a aba `diagram.json`, mude para edição de texto se necessário e substitua pelo `diagram.json` deste pacote.
-4. Crie/abra `libraries.txt` e cole o conteúdo do arquivo correspondente. Se a interface solicitar, adicione a biblioteca **LiquidCrystal I2C** pelo Library Manager.
-5. Clique em **Start Simulation** (▶). O LCD começa com **4 vagas livres**; LED verde aceso e cancela fechada.
-6. Clique em cada HC-SR04 e altere a distância: **10 cm = ocupada**; **100 cm = livre**. Entre 18 e 25 cm, o sistema preserva o estado anterior para evitar oscilação. Os números de vaga acompanham a posição da esquerda para a direita.
-7. Pressione **ENTRADA** para solicitar abertura. O servo vai a 90° e volta a 0° após 3 s. Pressione **SAÍDA** para abrir independentemente da lotação. Os botões representam pedidos de passagem; para simular o carro estacionando ou saindo, altere também a distância do sensor da vaga.
-8. Coloque os quatro sensores em 10 cm e tente entrar: o LCD informa **ESTAC. LOTADO**, LED vermelho acende e a cancela permanece fechada.
+**[Abrir o circuito SmartPark no Wokwi](https://wokwi.com/projects/477249283136966657)**.
 
-Na versão embarcada do Wokwi, a escolha da vaga é representada fisicamente pela aproximação do carro ao HC-SR04 correspondente (alterar sua distância para 10 cm após solicitar entrada). O display não oferece um menu de escolha de vaga.
+1. Abra o link e clique em **Start Simulation** (▶). Com os sensores inicialmente em 100 cm, o sistema começa vazio, com quatro vagas livres e a cancela fechada.
+2. Localize **CANCELA (SERVO)** à direita. O braço vermelho fica horizontal quando fechado e vertical quando aberto.
+3. Pressione **ENTRADA**. A cancela abre somente se existir uma vaga disponível e nenhum sensor estiver com falha.
+4. Com a cancela aberta, clique no HC-SR04 de uma vaga livre e ajuste para **10 cm**. O sistema registra um carro entrando, acende o LED vermelho dessa vaga e reduz a disponibilidade.
+5. Pressione **ENTRADA** novamente para fechar a cancela. Cada abertura autoriza a movimentação de apenas um carro; repita a sequência para ocupar as demais vagas.
+6. Quando as quatro vagas estiverem ocupadas, pressione **ENTRADA**: a cancela permanece fechada e o LCD mostra **ESTAC. LOTADO**.
+7. Para retirar um carro, pressione **SAÍDA**, ajuste o sensor de uma vaga ocupada para **100 cm** e pressione **SAÍDA** novamente para fechar. O LED da vaga volta a verde.
+8. Quando não houver carros, **SAÍDA** não abre a cancela e o LCD mostra **ESTAC. VAZIO**.
+
+Os números das vagas seguem os sensores da esquerda para a direita. Até **18 cm**, a leitura indica presença; a partir de **25 cm**, indica ausência. Entre esses valores, a leitura anterior é preservada para evitar oscilações.
+
+**Limite do simulador:** o Arduino não consegue bloquear o controle de distância da interface do Wokwi. Neste modelo didático, alterações feitas com a cancela fechada, na direção errada ou após a movimentação já autorizada são ignoradas na ocupação registrada. Os sensores continuam sendo lidos para detectar falhas. Caso altere uma distância sem autorização, restaure-a ao estado registrado antes de solicitar a movimentação correta.
+
+O circuito não apresenta um menu de vagas no LCD: a escolha é representada pela alteração do sensor correspondente. Não há fechamento automático por tempo; um novo aperto em um dos botões fecha a cancela e confere a última leitura antes do fechamento. A leitura inicial considera as distâncias configuradas ao iniciar a simulação.
+
+### Reproduzir a partir dos arquivos
+
+Crie um [projeto Arduino Uno no Wokwi](https://wokwi.com/projects/new/arduino-uno), substitua integralmente `sketch.ino`, `diagram.json` e `libraries.txt` pelos arquivos deste repositório e inicie a simulação. As bibliotecas são **LiquidCrystal I2C**, **Servo** e **Adafruit NeoPixel**.
 
 ## Componentes e ligações
 
@@ -94,25 +105,34 @@ Na versão embarcada do Wokwi, a escolha da vaga é representada fisicamente pel
 | Servo | Sinal D10 | Abrir/fechar cancela |
 | Botão entrada; botão saída | D11; D12, respectivamente, até GND | Solicitar passagem; `INPUT_PULLUP` |
 | LCD 16×2 I²C | SDA A4; SCL A5; endereço 0x27 | Exibir vagas livres e mensagens |
-| LED verde; LED vermelho | A0; A1, através de resistores de 220 Ω | Livre; lotado/falha |
+| LED geral verde; LED geral vermelho | A0; A1, através de resistores de 220 Ω | Há vagas; lotação/falha |
+| Quatro LEDs endereçáveis WS2812 | D13 → DIN do primeiro; DOUT → DIN do seguinte; 5V e GND | Uma luz por vaga: verde livre, vermelho ocupada/falha |
 | Alimentação dos módulos | 5V e GND | Alimentação comum |
 
 ## Regras para explicar na apresentação
 
-1. O Arduino mede a distância dos quatro sensores. Até **18 cm**, a vaga fica ocupada; a partir de **25 cm**, fica livre. A faixa entre esses valores mantém a leitura anterior.
-2. O total de vagas livres é recalculado. Quando há vaga e todos os sensores respondem, o LED verde acende. Com lotação ou falha, acende o vermelho.
-3. Ao solicitar entrada, a cancela abre somente quando há vaga e não há falha. A saída pode ser solicitada mesmo com lotação ou falha.
-4. Sem resposta de um sensor em 30 ms, o sistema sinaliza falha e bloqueia **somente novas entradas**, uma decisão conservadora. O Monitor Serial registra distâncias e estados.
+1. O Arduino lê os quatro sensores e aplica os limites de **18 cm** e **25 cm**, preservando o estado anterior na faixa intermediária.
+2. Cada vaga tem um LED endereçável: **verde** para livre e **vermelho** para ocupada ou falha. O LED vermelho geral indica lotação completa ou falha.
+3. **ENTRADA** só abre quando há vaga e nenhum sensor está com falha. Uma vaga vermelha não bloqueia as outras livres; a lotação ocorre quando as quatro estão ocupadas.
+4. **SAÍDA** só abre se existir um carro registrado, inclusive quando estiver lotado ou houver falha.
+5. Cada abertura autoriza uma movimentação na direção solicitada. Com a cancela fechada, mudanças de ocupação são ignoradas pelo modelo.
+6. Um novo aperto fecha a cancela. Antes de fechar, o código confere o sensor para registrar a última movimentação autorizada.
+7. Sem eco de um sensor em **30 ms**, novas entradas são bloqueadas. O Monitor Serial registra movimentações, bloqueios, quantidade de carros e alterações ignoradas.
+8. O código está organizado e comentado por configuração, botões, sensores, cancela, display, inicialização e execução.
 
-## Roteiro curto de demonstração
+## Roteiro curto de demonstração do Wokwi
 
 | Etapa | Ação | Resultado esperado |
 |---|---|---|
-| 1 | Iniciar com sensores em 100 cm | 4 vagas livres, LED verde |
-| 2 | Mudar vaga 1 para 10 cm | 3 vagas livres |
-| 3 | Solicitar entrada | Cancela abre e fecha após 3 s |
-| 4 | Mudar as outras três vagas para 10 cm | 0 vagas livres, LED vermelho |
-| 5 | Solicitar entrada; depois saída | Entrada negada; saída liberada |
+| 1 | Iniciar com os quatro sensores em 100 cm; pressionar SAÍDA | Quatro vagas livres; saída bloqueada por estacionamento vazio |
+| 2 | Mudar um sensor para 10 cm com a cancela fechada | Alteração ignorada; ocupação registrada permanece igual |
+| 3 | Restaurar esse sensor para 100 cm; ENTRADA → sensor em 10 cm → ENTRADA | Cancela abre, um carro é registrado, LED da vaga fica vermelho e cancela fecha |
+| 4 | Repetir a entrada autorizada nas outras três vagas | Quatro carros; nenhuma vaga livre; LED vermelho geral aceso |
+| 5 | Pressionar ENTRADA | Entrada bloqueada por lotação |
+| 6 | SAÍDA → sensor ocupado em 100 cm → SAÍDA | Um carro sai, a vaga fica verde e a cancela fecha |
+| 7 | Repetir até esvaziar; pressionar SAÍDA | Quatro vagas livres; nova saída bloqueada |
+
+A lógica foi validada com um teste de cenários usando o firmware e componentes simulados: saída vazia, mudança de sensor com cancela fechada, quatro entradas, bloqueio por lotação, quatro saídas e novo bloqueio por vazio. A compilação e a abertura da cancela também foram verificadas no Wokwi.
 
 ## Documentação e entrega
 
@@ -121,4 +141,5 @@ A empresa fictícia, os integrantes, suas funções e o produto estão documenta
 Para concluir a validação acadêmica, a equipe deve confirmar a discussão do problema com o professor e registrar as evidências dos testes. Capturas ou vídeos podem ser adicionados à pasta `docs/`. A página web representa um ambiente virtual independente; ela não recebe dados do Wokwi ou de sensores físicos.
 
 Referências técnicas: [formato do diagrama](https://docs.wokwi.com/diagram-format), [sensor HC-SR04](https://docs.wokwi.com/parts/wokwi-hc-sr04), [LCD I²C](https://docs.wokwi.com/parts/wokwi-lcd1602), [servo](https://docs.wokwi.com/parts/wokwi-servo).
+
 

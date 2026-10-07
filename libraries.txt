@@ -1,2 +1,4 @@
 LiquidCrystal I2C
 Servo
+Adafruit NeoPixel
+

@@ -1,45 +1,56 @@
 /*
-  Estacionamento Inteligente — projeto de sistema embarcado
-  Equipe: preencher com os tres integrantes
+ * SmartPark — Estacionamento Inteligente
+ *
+ * Equipe:
+ *   João Gabriel Barbosa Costa
+ *   Gabriel Sales
+ *   Antônio Carlos
+ *
+ * Funcionamento:
+ *   - LED verde: vaga livre.
+ *   - LED vermelho: vaga ocupada ou falha no sensor.
+ *   - ENTRADA abre somente quando existe uma vaga disponível.
+ *   - SAÍDA abre somente quando existe um carro no estacionamento.
+ *   - Um novo aperto fecha a cancela.
+ *   - Cada abertura autoriza a movimentação de um carro.
+ *
+ * Este é um modelo didático. Os sensores continuam sendo lidos, mas
+ * mudanças sem autorização não alteram a ocupação registrada.
+ * O Arduino não consegue desativar os controles de distância do Wokwi.
+ */
 
-  Quatro sensores HC-SR04 monitoram as vagas. A cancela de entrada
-  abre apenas quando existe vaga e todos os sensores respondem.
-  O botao de saida abre a cancela independentemente da lotacao.
-  A posicao real dos carros e determinada pelos sensores: apertar
-  um botao nao altera artificialmente a contagem de vagas.
-*/
-
+// Bibliotecas
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <Servo.h>
+#include <Adafruit_NeoPixel.h>
 
-const byte NUM_VAGAS = 4;
-const byte TRIG[NUM_VAGAS] = {2, 4, 6, 8};
-const byte ECHO[NUM_VAGAS] = {3, 5, 7, 9};
-const byte PIN_SERVO = 10;
-const byte BOTAO_ENTRADA = 11;
-const byte BOTAO_SAIDA = 12;
-const byte LED_VERDE = A0;
-const byte LED_VERMELHO = A1;
-
-const float LIMIAR_OCUPADA_CM = 18.0;
-const float LIMIAR_LIVRE_CM = 25.0; // histerese evita oscilacao
-const unsigned long INTERVALO_LEITURA_MS = 450;
-const unsigned long TEMPO_CANCELA_MS = 3000;
+// Pinos e tempo de estabilização dos botões
+const byte TRIG[4] = {2, 4, 6, 8}, ECHO[4] = {3, 5, 7, 9};
+const byte PIN_SERVO = 10, BOTAO_ENTRADA = 11, BOTAO_SAIDA = 12,
+           LED_VERDE = A0, LED_VERMELHO = A1;
 const unsigned long DEBOUNCE_MS = 35;
 
+// Componentes
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 Servo cancela;
-bool ocupada[NUM_VAGAS] = {false, false, false, false};
-bool falhaSensor[NUM_VAGAS] = {false, false, false, false};
-byte livres = NUM_VAGAS;
-bool falhaGeral = false;
-bool aberta = false;
-unsigned long aberturaEm = 0;
-unsigned long ultimaLeitura = 0;
-unsigned long mensagemAte = 0;
+Adafruit_NeoPixel indicadores(4, 13, NEO_GRB + NEO_KHZ800);
+
+// Ocupação e falhas das quatro vagas
+bool ocupada[4] = {false, false, false, false},
+     falhaSensor[4] = {false, false, false, false};
+byte livres = 4;
+bool falhaGeral = false, aberta = false;
+
+// Controle de tempo e direção da movimentação
+unsigned long ultimaLeitura = 0, mensagemAte = 0, ultimoDisplay = 0;
+const byte FECHADA = 0, ENTRANDO = 1, SAINDO = 2;
+byte modo = FECHADA;
+bool leituraOcupada[4] = {false, false, false, false};
+bool movimentoConfirmado = false;
 const char* mensagem = "";
 
+// Estado usado para evitar vários eventos durante o mesmo aperto
 struct Botao {
   byte pin;
   bool ultimaLeitura;
@@ -47,124 +58,258 @@ struct Botao {
   unsigned long mudouEm;
 };
 
-Botao entrada = {BOTAO_ENTRADA, HIGH, HIGH, 0};
-Botao saida = {BOTAO_SAIDA, HIGH, HIGH, 0};
+Botao entrada = {BOTAO_ENTRADA, HIGH, HIGH, 0},
+      saida = {BOTAO_SAIDA, HIGH, HIGH, 0};
 
-// Retorna true somente no instante de um novo aperto estavel.
+// Leitura dos botões com debounce
 bool foiPressionado(Botao &b, unsigned long agora) {
   bool leitura = digitalRead(b.pin);
-  if (leitura != b.ultimaLeitura) b.mudouEm = agora;
+
+  if (leitura != b.ultimaLeitura)
+    b.mudouEm = agora;
+
   b.ultimaLeitura = leitura;
+
   if (agora - b.mudouEm >= DEBOUNCE_MS && leitura != b.estadoEstavel) {
     b.estadoEstavel = leitura;
     return leitura == LOW;
   }
+
   return false;
 }
 
-// Zero indica ausencia de ECHO: estado desconhecido e entrada bloqueada.
+// Distância em centímetros. Ausência de eco retorna zero.
 float medirDistancia(byte i) {
   digitalWrite(TRIG[i], LOW);
   delayMicroseconds(2);
+
   digitalWrite(TRIG[i], HIGH);
   delayMicroseconds(10);
   digitalWrite(TRIG[i], LOW);
+
   unsigned long duracao = pulseIn(ECHO[i], HIGH, 30000UL);
-  if (duracao == 0) return 0;
-  return duracao / 58.0;
+
+  return duracao == 0 ? 0 : duracao / 58.0;
 }
 
-void atualizarSensores() {
+// <=18 cm: ocupado; >=25 cm: livre.
+// Entre os limites, preserva a leitura anterior para evitar oscilações.
+// Somente uma transição autorizada altera a ocupação registrada.
+void atualizarSensores(bool inicial) {
+  bool houveMudanca = inicial;
   livres = 0;
   falhaGeral = false;
-  for (byte i = 0; i < NUM_VAGAS; i++) {
+
+  for (byte i = 0; i < 4; i++) {
     float cm = medirDistancia(i);
-    falhaSensor[i] = cm == 0;
-    if (falhaSensor[i]) {
+    bool falha = cm == 0;
+
+    if (falha != falhaSensor[i])
+      houveMudanca = true;
+
+    falhaSensor[i] = falha;
+
+    if (falha)
       falhaGeral = true;
-    } else {
-      if (cm <= LIMIAR_OCUPADA_CM) ocupada[i] = true;
-      else if (cm >= LIMIAR_LIVRE_CM) ocupada[i] = false;
-      if (!ocupada[i]) livres++;
-    }
-    Serial.print("Vaga "); Serial.print(i + 1);
-    Serial.print(": ");
-    if (falhaSensor[i]) Serial.println("FALHA SENSOR");
     else {
-      Serial.print(cm, 1); Serial.print(" cm - ");
-      Serial.println(ocupada[i] ? "OCUPADA" : "LIVRE");
+      bool nova = leituraOcupada[i];
+
+      if (cm <= 18)
+        nova = true;
+      else if (cm >= 25)
+        nova = false;
+
+      bool mudou = nova != leituraOcupada[i];
+      leituraOcupada[i] = nova;
+
+      if (inicial)
+        ocupada[i] = nova;
+      else if (mudou && nova != ocupada[i]) {
+        bool permitido = aberta && !movimentoConfirmado &&
+                         ((modo == ENTRANDO && nova) ||
+                          (modo == SAINDO && !nova));
+
+        Serial.print("Vaga ");
+        Serial.print(i + 1);
+
+        if (permitido) {
+          ocupada[i] = nova;
+          movimentoConfirmado = true;
+          houveMudanca = true;
+          Serial.println(nova ? ": CARRO ENTROU" : ": CARRO SAIU");
+        }
+        else
+          Serial.println(": ALTERACAO IGNORADA - SEM AUTORIZACAO");
+      }
     }
+
+    if (!ocupada[i] && !falhaSensor[i])
+      livres++;
+
+    indicadores.setPixelColor(
+      i,
+      (ocupada[i] || falhaSensor[i])
+        ? indicadores.Color(180, 0, 0)
+        : indicadores.Color(0, 180, 0)
+    );
   }
-  Serial.print("Livres: "); Serial.println(livres);
+
+  indicadores.show();
   digitalWrite(LED_VERDE, !falhaGeral && livres > 0);
   digitalWrite(LED_VERMELHO, falhaGeral || livres == 0);
+
+  if (houveMudanca) {
+    Serial.print("Carros: ");
+    byte carros = 0;
+
+    for (byte i = 0; i < 4; i++)
+      if (ocupada[i])
+        carros++;
+
+    Serial.print(carros);
+    Serial.print(" | Livres: ");
+    Serial.println(livres);
+  }
 }
 
+// Quantidade de carros registrada no estacionamento
+byte contarCarros() {
+  byte carros = 0;
+
+  for (byte i = 0; i < 4; i++)
+    if (ocupada[i])
+      carros++;
+
+  return carros;
+}
+
+// Mensagem temporária no LCD
 void mostrarMensagem(const char* texto, unsigned long agora) {
   mensagem = texto;
   mensagemAte = agora + 2200;
 }
 
-void abrirCancela(const char* motivo, unsigned long agora) {
+// Confirma a última leitura antes de baixar a cancela
+void fecharCancela(unsigned long agora) {
+  atualizarSensores(false);
+  cancela.write(0);
+  aberta = false;
+  modo = FECHADA;
+
+  mostrarMensagem("CANCELA FECHADA", agora);
+  Serial.println("Cancela fechada pelo botao");
+}
+
+// Abre e autoriza uma movimentação na direção solicitada
+void abrirCancela(const char* motivo, unsigned long agora, byte direcao) {
   cancela.write(90);
   aberta = true;
-  aberturaEm = agora;
+  modo = direcao;
+  movimentoConfirmado = false;
+
   mostrarMensagem(motivo, agora);
   Serial.println(motivo);
 }
 
+// Disponibilidade e situação da cancela no LCD
 void atualizarDisplay(unsigned long agora) {
   lcd.setCursor(0, 0);
-  lcd.print("LIVRES: "); lcd.print(livres);
+  lcd.print("LIVRES: ");
+  lcd.print(livres);
   lcd.print(" / 4    ");
   lcd.setCursor(0, 1);
+
   const char* linha = "PRESSIONE BOTAO";
-  if (aberta) linha = "CANCELA ABERTA";
-  else if (agora < mensagemAte) linha = mensagem;
-  else if (falhaGeral) linha = "FALHA NO SENSOR";
-  else if (livres == 0) linha = "LOTADO";
+
+  if (aberta)
+    linha = "CANCELA ABERTA";
+  else if ((long)(mensagemAte - agora) > 0)
+    linha = mensagem;
+  else if (falhaGeral)
+    linha = "FALHA NO SENSOR";
+  else if (livres == 0)
+    linha = "LOTADO";
+
   lcd.print(linha);
   byte len = strlen(linha);
-  while (len++ < 16) lcd.print(' ');
+
+  while (len++ < 16)
+    lcd.print(" ");
 }
 
+// Inicialização do Arduino e dos componentes
 void setup() {
   Serial.begin(115200);
-  for (byte i = 0; i < NUM_VAGAS; i++) {
+
+  for (byte i = 0; i < 4; i++) {
     pinMode(TRIG[i], OUTPUT);
     pinMode(ECHO[i], INPUT);
   }
+
   pinMode(BOTAO_ENTRADA, INPUT_PULLUP);
   pinMode(BOTAO_SAIDA, INPUT_PULLUP);
   pinMode(LED_VERDE, OUTPUT);
   pinMode(LED_VERMELHO, OUTPUT);
+
+  indicadores.begin();
   cancela.attach(PIN_SERVO);
   cancela.write(0);
+
   lcd.init();
   lcd.backlight();
-  atualizarSensores();
+  atualizarSensores(true);
   atualizarDisplay(millis());
 }
 
+// Monitoramento das vagas e atendimento das solicitações
 void loop() {
   unsigned long agora = millis();
-  if (agora - ultimaLeitura >= INTERVALO_LEITURA_MS) {
+
+  if (agora - ultimaLeitura >= 250) {
     ultimaLeitura = agora;
-    atualizarSensores();
+    atualizarSensores(false);
   }
-  if (foiPressionado(entrada, agora)) {
-    if (aberta) mostrarMensagem("AGUARDE...", agora);
-    else if (falhaGeral) mostrarMensagem("SENSOR COM FALHA", agora);
-    else if (livres == 0) mostrarMensagem("ESTAC. LOTADO", agora);
-    else abrirCancela("ENTRADA LIBERADA", agora);
+
+  bool pediuEntrada = foiPressionado(entrada, agora);
+  bool pediuSaida = foiPressionado(saida, agora);
+
+  // Entrada: fecha se estiver aberta; caso contrário, valida a abertura.
+  if (pediuEntrada) {
+    if (aberta)
+      fecharCancela(agora);
+    else {
+      atualizarSensores(false);
+
+      if (falhaGeral) {
+        mostrarMensagem("SENSOR COM FALHA", agora);
+        Serial.println("ENTRADA BLOQUEADA: FALHA");
+      }
+      else if (livres == 0) {
+        mostrarMensagem("ESTAC. LOTADO", agora);
+        Serial.println("ENTRADA BLOQUEADA: LOTADO");
+      }
+      else
+        abrirCancela("ENTRADA LIBERADA", agora, ENTRANDO);
+    }
   }
-  if (foiPressionado(saida, agora)) {
-    if (!aberta) abrirCancela("SAIDA LIBERADA", agora);
+  // Saída: somente abre quando existe um carro dentro.
+  else if (pediuSaida) {
+    if (aberta)
+      fecharCancela(agora);
+    else if (contarCarros() == 0) {
+      mostrarMensagem("ESTAC. VAZIO", agora);
+      Serial.println("SAIDA BLOQUEADA: VAZIO");
+    }
+    else
+      abrirCancela("SAIDA LIBERADA", agora, SAINDO);
   }
-  if (aberta && agora - aberturaEm >= TEMPO_CANCELA_MS) {
-    cancela.write(0);
-    aberta = false;
-    Serial.println("Cancela fechada");
+
+  // Limita o redesenho do LCD para melhorar a resposta da simulação.
+  if (pediuEntrada || pediuSaida || agora - ultimoDisplay >= 250) {
+    ultimoDisplay = agora;
+    atualizarDisplay(agora);
   }
-  atualizarDisplay(agora);
+
+  delay(1);
 }
+
