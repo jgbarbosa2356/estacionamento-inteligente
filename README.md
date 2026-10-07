@@ -109,31 +109,6 @@ Crie um [projeto Arduino Uno no Wokwi](https://wokwi.com/projects/new/arduino-un
 | Quatro LEDs endereçáveis WS2812 | D13 → DIN do primeiro; DOUT → DIN do seguinte; 5V e GND | Uma luz por vaga: verde livre, vermelho ocupada/falha |
 | Alimentação dos módulos | 5V e GND | Alimentação comum |
 
-## Regras para explicar na apresentação
-
-1. O Arduino lê os quatro sensores e aplica os limites de **18 cm** e **25 cm**, preservando o estado anterior na faixa intermediária.
-2. Cada vaga tem um LED endereçável: **verde** para livre e **vermelho** para ocupada ou falha. O LED vermelho geral indica lotação completa ou falha.
-3. **ENTRADA** só abre quando há vaga e nenhum sensor está com falha. Uma vaga vermelha não bloqueia as outras livres; a lotação ocorre quando as quatro estão ocupadas.
-4. **SAÍDA** só abre se existir um carro registrado, inclusive quando estiver lotado ou houver falha.
-5. Cada abertura autoriza uma movimentação na direção solicitada. Com a cancela fechada, mudanças de ocupação são ignoradas pelo modelo.
-6. Um novo aperto fecha a cancela. Antes de fechar, o código confere o sensor para registrar a última movimentação autorizada.
-7. Sem eco de um sensor em **30 ms**, novas entradas são bloqueadas. O Monitor Serial registra movimentações, bloqueios, quantidade de carros e alterações ignoradas.
-8. O código está organizado e comentado por configuração, botões, sensores, cancela, display, inicialização e execução.
-
-## Roteiro curto de demonstração do Wokwi
-
-| Etapa | Ação | Resultado esperado |
-|---|---|---|
-| 1 | Iniciar com os quatro sensores em 100 cm; pressionar SAÍDA | Quatro vagas livres; saída bloqueada por estacionamento vazio |
-| 2 | Mudar um sensor para 10 cm com a cancela fechada | Alteração ignorada; ocupação registrada permanece igual |
-| 3 | Restaurar esse sensor para 100 cm; ENTRADA → sensor em 10 cm → ENTRADA | Cancela abre, um carro é registrado, LED da vaga fica vermelho e cancela fecha |
-| 4 | Repetir a entrada autorizada nas outras três vagas | Quatro carros; nenhuma vaga livre; LED vermelho geral aceso |
-| 5 | Pressionar ENTRADA | Entrada bloqueada por lotação |
-| 6 | SAÍDA → sensor ocupado em 100 cm → SAÍDA | Um carro sai, a vaga fica verde e a cancela fecha |
-| 7 | Repetir até esvaziar; pressionar SAÍDA | Quatro vagas livres; nova saída bloqueada |
-
-A lógica foi validada com um teste de cenários usando o firmware e componentes simulados: saída vazia, mudança de sensor com cancela fechada, quatro entradas, bloqueio por lotação, quatro saídas e novo bloqueio por vazio. A compilação e a abertura da cancela também foram verificadas no Wokwi.
-
 ## Documentação e entrega
 
 A empresa fictícia, os integrantes, suas funções e o produto estão documentados neste README. O repositório contém o código-fonte, o esquema Wokwi, a simulação web e a [documentação em PDF](docs/Documentacao_SmartPark_Nova_Roma.pdf).
